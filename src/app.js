@@ -1,30 +1,52 @@
-const http = require("http");
+const http = require('http');
 
 const server = http.createServer((req, res) => {
-  if (req.method === "POST") {
-    const chunks = [];
+  if (req.method === 'POST') {
+    let chunks = '';
 
-    req.on("data", (chunk) => {
-      const buf = Buffer.from(chunk);
-      const str = buf.toString();
-      chunks.push(str);
-      const obj = JSON.parse(chunks);
-      const value1 = obj.num1;
-      const value2 = obj.num2;
-
-      // Write code here to calculate power of a number
-      if (isNaN(value1) || value1 <= 0) {
-        return res.status(404).send("num1 must be a positive integer");
-      }
-
-      if (isNaN(value2) || value2 < 0) {
-        return res.status(400).send("num2 must be a non-negative integer");
-      }
-
-      const result = Math.pow(value1, value2);
-
-      res.status(200).send(`The result is ${result}`);
+    req.on('data', chunk => {
+      chunks += chunk;
     });
+
+    req.on('end', () => {
+      try {
+        const obj = JSON.parse(chunks);
+        const value1 = obj.num1;
+        const value2 = obj.num2;
+
+        // Check if num1 is a positive integer
+        if (value1 <= 0 || !Number.isInteger(value1)) {
+          res.statusCode = 404;
+          res.setHeader('Content-Type', 'text/plain');
+          res.end('The operation cannot be performed');
+        }
+
+        // Check if num2 is a non-negative integer
+        else if (value2 < 0 || !Number.isInteger(value2)) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'text/plain');
+          res.end('Error: num2 must be a non-negative integer');
+        }
+
+        // Calculate the exponential result
+        else {
+          const result = Math.pow(value1, value2);
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'text/plain');
+          res.end(`The result is ${result}`);
+        }
+      } 
+      catch (error) {
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'text/plain');
+        res.end('Error: invalid input format');
+      }
+    });
+  } 
+  else {
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('Error: only POST requests are supported');
   }
 });
 
